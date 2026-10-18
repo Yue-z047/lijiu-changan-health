@@ -2,206 +2,343 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>维护端 - 数据库管理</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>利久长安健康</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f4f7f6; padding: 20px; margin: 0; }
-        .container { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        .header h2 { margin: 0; color: #333; }
-        .header-actions { display: flex; gap: 10px; }
-        input[type="text"] { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; outline: none; }
-        button { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; color: #fff; font-size: 14px; transition: 0.2s; }
-        .btn-add { background: #4CAF50; }
-        .btn-add:hover { background: #45a049; }
-        .btn-del { background: #f44336; padding: 5px 10px; font-size: 12px; }
-        .btn-del:hover { background: #d32f2f; }
-        .btn-back { background: #9e9e9e; padding: 5px 10px; font-size: 12px; margin-right: 5px;}
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Segoe UI, Arial, Roboto, "PingFang SC", "miui", "Hiragino Sans GB", "Microsoft Yahei", sans-serif; }
+        body { background-color: #f7f8fa; color: #333; padding-bottom: 60px; }
+        .header { text-align: center; padding: 15px 0; font-size: 18px; font-weight: bold; background: #fff; position: sticky; top: 0; z-index: 100; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #e0e0e0; padding: 12px; text-align: left; font-size: 14px; }
-        th { background-color: #f8f9fa; font-weight: bold; color: #555; }
-        tr:nth-child(even) { background-color: #fbfbfb; }
-        tr:hover { background-color: #f1f1f1; }
+        /* 页面通用隐藏/显示 */
+        .page { display: none; }
+        .page.active { display: block; }
 
-        /* 模态框 */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: #fff; padding: 25px; border-radius: 8px; width: 90%; max-width: 400px; }
-        .modal-content h3 { margin-top: 0; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-size: 14px; color: #555; }
-        .form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-        .btn-save { background: #2196F3; }
-        .btn-cancel { background: #9e9e9e; }
+        /* ================= 第一级：首页样式 ================= */
+        .banner-container { 
+            width: 100%; 
+            height: 160px; 
+            background: linear-gradient(135deg, #fdf2f0 0%, #fbdcd7 50%, #fceceb 100%); 
+            position: relative; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center;
+            overflow: hidden;
+        }
+        .banner-container::before {
+            content: ''; position: absolute; top: -50%; left: -20%; width: 140%; height: 200%;
+            background: repeating-radial-gradient(circle at 50% 50%, transparent, transparent 20px, rgba(255,255,255,0.3) 20px, rgba(255,255,255,0.3) 21px);
+            transform: rotate(-10deg);
+        }
+        .banner-title { position: relative; font-size: 32px; font-weight: bold; color: #c1272d; font-family: "KaiTi", "STKaiti", serif; letter-spacing: 2px; margin-bottom: 10px; z-index: 2;}
+        .banner-tag-container { display: flex; align-items: center; gap: 5px; z-index: 2; }
+        .tag-left { background: #cfa77a; color: #fff; padding: 4px 12px; border-radius: 15px 0 0 15px; font-size: 14px; }
+        .tag-right { background: #fff; color: #cfa77a; padding: 4px 12px; border-radius: 0 15px 15px 0; font-size: 14px; border: 1px solid #cfa77a; border-left: none;}
+
+        .nav-icons { display: flex; justify-content: space-around; padding: 20px 10px; background: #fff; }
+        .nav-item { text-align: center; font-size: 12px; color: #333; cursor: pointer; }
+        .nav-item .icon { width: 45px; height: 45px; border-radius: 12px; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; }
+        .icon-1 { background: linear-gradient(135deg, #42d3c3, #28a99b); }
+        .icon-2 { background: linear-gradient(135deg, #ffb74d, #f57c00); }
+        .icon-3 { background: linear-gradient(135deg, #9c88ff, #7b68ee); }
+        .icon-4 { background: linear-gradient(135deg, #64b5f6, #2196f3); }
+        
+        .common-func { padding: 15px; }
+        .common-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; }
+        .grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .card { background: #fff; border-radius: 10px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; overflow: hidden; cursor: pointer;}
+        .card h4 { font-size: 14px; margin-bottom: 5px; color: #333;}
+        .card p { font-size: 11px; color: #999; }
+        .card:nth-child(1) { background: linear-gradient(135deg, #e8f4ff, #d0e8ff); }
+        .card:nth-child(2) { background: linear-gradient(135deg, #f3e8ff, #e6d0ff); }
+        .card:nth-child(3) { background: linear-gradient(135deg, #fff3e0, #ffe0b2); }
+        .card:nth-child(4) { background: linear-gradient(135deg, #e0f2f1, #b2dfdb); }
+
+        /* 底部导航 */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 55px; background: #fff; display: flex; border-top: 1px solid #eee; z-index: 100; }
+        .bottom-nav div { flex: 1; text-align: center; line-height: 55px; font-size: 12px; color: #999; }
+        .bottom-nav div.active { color: #4A90E2; }
+
+        /* ================= 第二级：搜索页 ================= */
+        .search-container { padding: 40px 20px; display: flex; flex-direction: column; align-items: center; }
+        .search-input { width: 100%; max-width: 300px; height: 45px; border: 1px solid #28a99b; border-radius: 8px; padding: 0 15px; margin-bottom: 20px; font-size: 16px; outline: none; }
+        .btn-search { width: 100%; max-width: 300px; height: 45px; background: #28a99b; color: #fff; border: none; border-radius: 8px; font-size: 16px; margin-top: 10px; }
+
+        /* ================= 第三级：记录列表 (已统一为蓝绿色) ================= */
+        .record-list { padding: 15px; }
+        .record-item { 
+            background: #fff; 
+            border: 1px solid #28a99b; /* 边框改为蓝绿色 */
+            border-radius: 8px; 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(40, 169, 155, 0.1); /* 添加一点蓝绿色的微弱阴影提升质感 */
+        }
+        .record-item p { 
+            font-size: 14px; 
+            margin-bottom: 5px; 
+            color: #28a99b; /* 字体颜色改为蓝绿色 */
+        }
+
+        /* ================= 第四级：详情页 ================= */
+        .detail-content { padding: 15px; background: #f7f8fa; }
+        .page-title { text-align: center; font-size: 16px; margin: 10px 0 20px; color: #333; }
+        
+        /* 白底卡片 */
+        .detail-box { background: #fff; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .detail-box h4 { font-size: 14px; margin-bottom: 10px; color: #333; font-weight: normal; }
+        .detail-box p { font-size: 13px; color: #666; line-height: 1.6; margin-bottom: 5px; }
+        .detail-box .store-name { font-weight: bold; color: #333; font-size: 14px; margin-bottom: 8px;}
+        
+        /* 药品信息条 */
+        .med-info { display: flex; align-items: center; background: #fff; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .med-icon-box { 
+            width: 54px; 
+            height: 54px; 
+            background: #f4f4f5; 
+            border-radius: 12px; 
+            margin-right: 15px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .med-icon-box svg { width: 36px; height: 36px; }
+        .med-text p:first-child { font-size: 15px; color: #333; margin-bottom: 6px; }
+        .med-text p:last-child { font-size: 13px; color: #999; }
+
+        /* 注与温馨提示（黄色边框） */
+        .warning-box { 
+            background: #fff; 
+            border: 1px solid #dfb864; 
+            border-radius: 8px; 
+            padding: 16px; 
+            margin-bottom: 15px; 
+        }
+        .warning-box p { 
+            font-size: 14px; 
+            color: #333; 
+            line-height: 1.8; 
+            margin-bottom: 10px;
+        }
+        .warning-box p:last-child { margin-bottom: 0; }
+        /* 加粗文字 */
+        .bold-text { font-weight: bold; }
+        /* 绿色高亮文字 */
+        .green-text { color: #2e8b57; } 
+        
+        /* 订单信息 */
+        .order-info { padding: 0 5px; margin-bottom: 20px; }
+        .order-info p { font-size: 13px; color: #555; margin-bottom: 8px; }
+        
+        /* 底部返回按钮 */
+        .btn-back { display: block; width: 100%; height: 44px; background: #fff; color: #4A90E2; border: 1px solid #4A90E2; border-radius: 22px; font-size: 15px; text-align: center; line-height: 42px; text-decoration: none; margin-top: 10px; outline:none;}
+
+        /* 提示弹窗 */
+        #toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: #fff; padding: 10px 20px; border-radius: 5px; font-size: 14px; display: none; z-index: 1000; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <h2>数据库维护端</h2>
-        <div class="header-actions">
-            <input type="text" id="searchInput" placeholder="搜索姓名、电话、订单号..." oninput="renderTable()">
-            <button class="btn-add" onclick="openModal()">+ 添加信息</button>
+    <div class="header" id="pageHeader">利久长安健康</div>
+
+    <!-- 第一级：首页 -->
+    <div class="page active" id="page1">
+        <div class="banner-container">
+            <div class="banner-title">艾瑞利</div>
+            <div class="banner-tag-container">
+                <span class="tag-left">利久长安</span>
+                <span class="tag-right">艾瑞利援助项目</span>
+            </div>
+        </div>
+        
+        <div class="nav-icons">
+            <div class="nav-item" onclick="showToast()"><div class="icon icon-1">📄</div>项目介绍</div>
+            <div class="nav-item" onclick="showToast()"><div class="icon icon-2">📝</div>援助申请</div>
+            <div class="nav-item" onclick="goToPage2()"><div class="icon icon-3">🔍</div>申请进度</div>
+            <div class="nav-item" onclick="showToast()"><div class="icon icon-4">❓</div>常见问题</div>
+        </div>
+
+        <div class="common-func">
+            <div class="common-title">常用功能</div>
+            <div class="grid-2x2">
+                <div class="card" onclick="showToast()"><h4>项目公告</h4><p>项目最新资讯</p></div>
+                <div class="card" onclick="showToast()"><h4>项目流程</h4><p>援助执行流程</p></div>
+                <div class="card" onclick="showToast()"><h4>申请条件</h4><p>项目申请条件</p></div>
+                <div class="card" onclick="showToast()"><h4>资料下载</h4><p>患者材料模板</p></div>
+            </div>
         </div>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>序号</th>
-                <th>姓名</th>
-                <th>电话</th>
-                <th>领取时间</th>
-                <th>订单编号</th>
-                <th>订单时间</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody">
-            <!-- 动态渲染 -->
-        </tbody>
-    </table>
-</div>
-
-<!-- 添加信息模态框 -->
-<div class="modal" id="addModal">
-    <div class="modal-content">
-        <h3>添加新记录</h3>
-        <div class="form-group">
-            <label>姓名</label>
-            <input type="text" id="addName">
-        </div>
-        <div class="form-group">
-            <label>电话</label>
-            <input type="text" id="addPhone">
-        </div>
-        <div class="form-group">
-            <label>领取时间 (例如: 2026-10-15)</label>
-            <input type="text" id="addPickTime">
-        </div>
-        <div class="form-group">
-            <label>订单编号</label>
-            <input type="text" id="addOrderNo">
-        </div>
-        <div class="form-group">
-            <label>订单时间 (例如: 2026/10/09 19:44:45)</label>
-            <input type="text" id="addOrderTime">
-        </div>
-        <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeModal()">取消</button>
-            <button class="btn-save" onclick="saveRecord()">保存</button>
+    <!-- 第二级：搜索 -->
+    <div class="page" id="page2">
+        <div class="search-container">
+            <input type="text" id="searchName" class="search-input" placeholder="请输入姓名">
+            <input type="tel" id="searchPhone" class="search-input" placeholder="请输入电话">
+            <button class="btn-search" onclick="searchRecords()">查询进度</button>
         </div>
     </div>
-</div>
 
-<script>
-    // 获取数据
-    function getDB() {
-        let data = localStorage.getItem('yiyuan_db');
-        if (!data) {
-            // 初始化第一条默认数据
-            const defaultData = [
-                { id: Date.now(), name: "张三", phone: "13800138000", pickTime: "2026-10-15", orderNo: "202610282194445844905", orderTime: "2026/10/09 19:44:45" }
-            ];
-            localStorage.setItem('yiyuan_db', JSON.stringify(defaultData));
-            return defaultData;
+    <!-- 第三级：记录列表 -->
+    <div class="page" id="page3">
+        <div class="record-list" id="recordListContainer">
+            <!-- 动态填充记录 -->
+        </div>
+    </div>
+
+    <!-- 第四级：详情 -->
+    <div class="page" id="page4">
+        <div class="detail-content" id="detailContainer">
+            <!-- 动态填充详情 -->
+        </div>
+    </div>
+
+    <!-- 底部导航 -->
+    <div class="bottom-nav">
+        <div class="active" onclick="goHome()">首页</div>
+        <div onclick="showToast()">消息</div>
+        <div onclick="showToast()">我的</div>
+    </div>
+
+    <div id="toast">正在开发中...</div>
+
+    <script>
+        // 模拟数据库
+        function getDB() {
+            let data = localStorage.getItem('yiyuan_db');
+            if (!data) {
+                const defaultData = [
+                    { id: 1, name: "张三", phone: "13800138000", pickTime: "2026-10-15", orderNo: "202610282194445844905", orderTime: "2026/10/09 19:44:45" }
+                ];
+                localStorage.setItem('yiyuan_db', JSON.stringify(defaultData));
+                return defaultData;
+            }
+            return JSON.parse(data);
         }
-        return JSON.parse(data);
-    }
 
-    // 保存数据
-    function saveDB(data) {
-        localStorage.setItem('yiyuan_db', JSON.stringify(data));
-    }
+        // 提示功能
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 2000);
+        }
 
-    // 渲染表格
-    function renderTable() {
-        const searchKeyword = document.getElementById('searchInput').value.toLowerCase();
-        const data = getDB();
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
+        // 页面切换
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.getElementById('pageHeader').innerText = "利久长安健康";
+        }
 
-        const filteredData = data.filter(item => 
-            item.name.toLowerCase().includes(searchKeyword) || 
-            item.phone.includes(searchKeyword) || 
-            item.orderNo.includes(searchKeyword)
-        );
+        function goHome() { showPage('page1'); }
+        
+        function goToPage2() {
+            document.getElementById('searchName').value = '';
+            document.getElementById('searchPhone').value = '';
+            showPage('page2');
+        }
 
-        filteredData.forEach((item, index) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${index + 1}</td>
-                <td>${item.name}</td>
-                <td>${item.phone}</td>
-                <td>${item.pickTime}</td>
-                <td>${item.orderNo}</td>
-                <td>${item.orderTime}</td>
-                <td>
-                    <button class="btn-del" onclick="deleteRecord(${item.id})">删除</button>
-                </td>
+        // 搜索逻辑
+        function searchRecords() {
+            const name = document.getElementById('searchName').value.trim();
+            const phone = document.getElementById('searchPhone').value.trim();
+
+            if (!name || !phone) {
+                alert("请输入姓名和电话");
+                return;
+            }
+
+            const db = getDB();
+            const results = db.filter(item => item.name === name && item.phone === phone);
+
+            const container = document.getElementById('recordListContainer');
+            container.innerHTML = '';
+
+            if (results.length === 0) {
+                container.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">未查询到相关领取记录</p>';
+            } else {
+                results.forEach(record => {
+                    const div = document.createElement('div');
+                    div.className = 'record-item';
+                    div.onclick = () => showDetail(record.id);
+                    // 将“领取记录”四个字的颜色也统一改为蓝绿色
+                    div.innerHTML = `
+                        <p style="font-weight:bold; color:#28a99b; font-size: 15px;">领取记录</p>
+                        <p>领取时间：${record.pickTime}</p>
+                        <p>领取药房：广药大药房（广东）有限公司先烈南路店</p>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+            showPage('page3');
+        }
+
+        // 显示详情
+        function showDetail(recordId) {
+            const db = getDB();
+            const record = db.find(item => item.id === recordId);
+            if (!record) return;
+
+            const container = document.getElementById('detailContainer');
+            
+            container.innerHTML = `
+                <div class="page-title">您的订单待取药</div>
+                
+                <!-- 领药门店信息 -->
+                <div class="detail-box">
+                    <h4>领药门店信息</h4>
+                    <p class="store-name">广药大药房（广东）有限公司先烈南路店</p>
+                    <p>营业时间：8:00-12:00 14:00-17:30</p>
+                    <p>广州市越秀区先烈南路21号之五319-320房</p>
+                    <p>联系人：钟海辉</p>
+                    <p>药店座机号：未知</p>
+                </div>
+
+                <!-- 药品信息 -->
+                <div class="med-info">
+                    <div class="med-icon-box">
+                        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <g stroke="#5cb8a3" stroke-linecap="round" stroke-linejoin="round" transform="rotate(-45 50 50)">
+                                <rect x="30" y="15" width="40" height="70" rx="20" stroke-width="6"/>
+                                <line x1="30" y1="50" x2="70" y2="50" stroke-width="6"/>
+                                <circle cx="50" cy="60" r="4.5" stroke-width="3" />
+                                <circle cx="40" cy="65" r="3.5" stroke-width="2.5" />
+                                <circle cx="60" cy="65" r="3.5" stroke-width="2.5" />
+                                <circle cx="50" cy="72" r="4" stroke-width="3" />
+                                <circle cx="38" cy="75" r="2.5" stroke-width="2" />
+                                <circle cx="62" cy="75" r="2.5" stroke-width="2" />
+                                <circle cx="49" cy="81" r="2" stroke-width="2" />
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="med-text">
+                        <p>阿得贝利单抗注射液（艾瑞利）</p>
+                        <p>规格：600mg(12ml)/瓶 &nbsp;&nbsp; 数量：2盒</p>
+                    </div>
+                </div>
+
+                <!-- 注与温馨提示 -->
+                <div class="warning-box">
+                    <p>
+                        <span class="bold-text">注：</span> 药品的贮藏温度是 <span class="bold-text">2-8℃</span>，请您在领取药物时携带相应的保温物品，如冰袋、保温盒等，<span class="bold-text">不要将药物放到冰箱冷冻，避免因领取后保存不当导致的药品失温失效等问题。</span>
+                    </p>
+                    <p style="margin-top: 12px;">
+                        <span class="bold-text">温馨提示：</span> 您的预计领药日期是<span class="green-text bold-text">${record.pickTime}</span>请您按照预计领药时间，准时前往药店领取研究药品。研究药品<span class="bold-text">逾期未领取的，本次预约失效，需重新登录账号选预约药店领取药品。若选药店4次(30天内)仍未按时领药，本次领药申请将自动失效，可重新提交申请资料。</span>请务必留意领药时间，避免耽误您的用药安排。
+                    </p>
+                </div>
+
+                <!-- 订单信息 -->
+                <div class="order-info">
+                    <p>订单编号：${record.orderNo}</p>
+                    <p>订单时间：${record.orderTime}</p>
+                    <p>配送方式：线下领药</p>
+                </div>
+
+                <!-- 返回按钮 -->
+                <button class="btn-back" onclick="showPage('page3')">返回</button>
             `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    // 打开模态框
-    function openModal() {
-        document.getElementById('addName').value = '';
-        document.getElementById('addPhone').value = '';
-        document.getElementById('addPickTime').value = '';
-        document.getElementById('addOrderNo').value = '';
-        document.getElementById('addOrderTime').value = '';
-        document.getElementById('addModal').style.display = 'flex';
-    }
-
-    // 关闭模态框
-    function closeModal() {
-        document.getElementById('addModal').style.display = 'none';
-    }
-
-    // 保存记录
-    function saveRecord() {
-        const name = document.getElementById('addName').value.trim();
-        const phone = document.getElementById('addPhone').value.trim();
-        const pickTime = document.getElementById('addPickTime').value.trim();
-        const orderNo = document.getElementById('addOrderNo').value.trim();
-        const orderTime = document.getElementById('addOrderTime').value.trim();
-
-        if (!name || !phone || !pickTime || !orderNo || !orderTime) {
-            alert("请填写完整信息！");
-            return;
+            showPage('page4');
         }
-
-        const data = getDB();
-        data.push({
-            id: Date.now(), // 使用时间戳作为唯一ID
-            name,
-            phone,
-            pickTime,
-            orderNo,
-            orderTime
-        });
-        saveDB(data);
-        closeModal();
-        renderTable();
-        alert("添加成功！");
-    }
-
-    // 删除记录
-    function deleteRecord(id) {
-        if (confirm("确定要删除这条记录吗？")) {
-            let data = getDB();
-            data = data.filter(item => item.id !== id);
-            saveDB(data);
-            renderTable();
-        }
-    }
-
-    // 页面加载初始化
-    window.onload = renderTable;
-</script>
-
+    </script>
 </body>
 </html>
