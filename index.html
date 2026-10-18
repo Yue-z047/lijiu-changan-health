@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>维护端 - 数据库管理</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f4f7f6; padding: 20px; margin: 0; }
+        .container { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .header h2 { margin: 0; color: #333; }
+        .header-actions { display: flex; gap: 10px; }
+        input[type="text"] { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; outline: none; }
+        button { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; color: #fff; font-size: 14px; transition: 0.2s; }
+        .btn-add { background: #4CAF50; }
+        .btn-add:hover { background: #45a049; }
+        .btn-del { background: #f44336; padding: 5px 10px; font-size: 12px; }
+        .btn-del:hover { background: #d32f2f; }
+        .btn-back { background: #9e9e9e; padding: 5px 10px; font-size: 12px; margin-right: 5px;}
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #e0e0e0; padding: 12px; text-align: left; font-size: 14px; }
+        th { background-color: #f8f9fa; font-weight: bold; color: #555; }
+        tr:nth-child(even) { background-color: #fbfbfb; }
+        tr:hover { background-color: #f1f1f1; }
+
+        /* 模态框 */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #fff; padding: 25px; border-radius: 8px; width: 90%; max-width: 400px; }
+        .modal-content h3 { margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 14px; color: #555; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .btn-save { background: #2196F3; }
+        .btn-cancel { background: #9e9e9e; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>数据库维护端</h2>
+        <div class="header-actions">
+            <input type="text" id="searchInput" placeholder="搜索姓名、电话、订单号..." oninput="renderTable()">
+            <button class="btn-add" onclick="openModal()">+ 添加信息</button>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>序号</th>
+                <th>姓名</th>
+                <th>电话</th>
+                <th>领取时间</th>
+                <th>订单编号</th>
+                <th>订单时间</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <!-- 动态渲染 -->
+        </tbody>
+    </table>
+</div>
+
+<!-- 添加信息模态框 -->
+<div class="modal" id="addModal">
+    <div class="modal-content">
+        <h3>添加新记录</h3>
+        <div class="form-group">
+            <label>姓名</label>
+            <input type="text" id="addName">
+        </div>
+        <div class="form-group">
+            <label>电话</label>
+            <input type="text" id="addPhone">
+        </div>
+        <div class="form-group">
+            <label>领取时间 (例如: 2026-10-15)</label>
+            <input type="text" id="addPickTime">
+        </div>
+        <div class="form-group">
+            <label>订单编号</label>
+            <input type="text" id="addOrderNo">
+        </div>
+        <div class="form-group">
+            <label>订单时间 (例如: 2026/10/09 19:44:45)</label>
+            <input type="text" id="addOrderTime">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal()">取消</button>
+            <button class="btn-save" onclick="saveRecord()">保存</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 获取数据
+    function getDB() {
+        let data = localStorage.getItem('yiyuan_db');
+        if (!data) {
+            // 初始化第一条默认数据
+            const defaultData = [
+                { id: Date.now(), name: "张三", phone: "13800138000", pickTime: "2026-10-15", orderNo: "202610282194445844905", orderTime: "2026/10/09 19:44:45" }
+            ];
+            localStorage.setItem('yiyuan_db', JSON.stringify(defaultData));
+            return defaultData;
+        }
+        return JSON.parse(data);
+    }
+
+    // 保存数据
+    function saveDB(data) {
+        localStorage.setItem('yiyuan_db', JSON.stringify(data));
+    }
+
+    // 渲染表格
+    function renderTable() {
+        const searchKeyword = document.getElementById('searchInput').value.toLowerCase();
+        const data = getDB();
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+
+        const filteredData = data.filter(item => 
+            item.name.toLowerCase().includes(searchKeyword) || 
+            item.phone.includes(searchKeyword) || 
+            item.orderNo.includes(searchKeyword)
+        );
+
+        filteredData.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${item.name}</td>
+                <td>${item.phone}</td>
+                <td>${item.pickTime}</td>
+                <td>${item.orderNo}</td>
+                <td>${item.orderTime}</td>
+                <td>
+                    <button class="btn-del" onclick="deleteRecord(${item.id})">删除</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // 打开模态框
+    function openModal() {
+        document.getElementById('addName').value = '';
+        document.getElementById('addPhone').value = '';
+        document.getElementById('addPickTime').value = '';
+        document.getElementById('addOrderNo').value = '';
+        document.getElementById('addOrderTime').value = '';
+        document.getElementById('addModal').style.display = 'flex';
+    }
+
+    // 关闭模态框
+    function closeModal() {
+        document.getElementById('addModal').style.display = 'none';
+    }
+
+    // 保存记录
+    function saveRecord() {
+        const name = document.getElementById('addName').value.trim();
+        const phone = document.getElementById('addPhone').value.trim();
+        const pickTime = document.getElementById('addPickTime').value.trim();
+        const orderNo = document.getElementById('addOrderNo').value.trim();
+        const orderTime = document.getElementById('addOrderTime').value.trim();
+
+        if (!name || !phone || !pickTime || !orderNo || !orderTime) {
+            alert("请填写完整信息！");
+            return;
+        }
+
+        const data = getDB();
+        data.push({
+            id: Date.now(), // 使用时间戳作为唯一ID
+            name,
+            phone,
+            pickTime,
+            orderNo,
+            orderTime
+        });
+        saveDB(data);
+        closeModal();
+        renderTable();
+        alert("添加成功！");
+    }
+
+    // 删除记录
+    function deleteRecord(id) {
+        if (confirm("确定要删除这条记录吗？")) {
+            let data = getDB();
+            data = data.filter(item => item.id !== id);
+            saveDB(data);
+            renderTable();
+        }
+    }
+
+    // 页面加载初始化
+    window.onload = renderTable;
+</script>
+
+</body>
+</html>
